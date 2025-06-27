@@ -22,6 +22,8 @@ from ..utils.error_handling import (
     ErrorHandler, SafeExecutor, retry_on_error, RetryConfig,
     AnalysisError, ErrorSeverity, ErrorCategory
 )
+from ..utils.cache import file_cache
+from ..utils.performance import ConcurrentProcessor, performance_context, PerformanceMonitor
 
 
 class SiteAnalyzer:
@@ -46,6 +48,10 @@ class SiteAnalyzer:
         self.structure_extractor = StructureExtractor()
         self.design_extractor = DesignExtractor()
         
+        # Performance optimization
+        self.processor = ConcurrentProcessor(max_workers=4)
+        self.performance_monitor = PerformanceMonitor()
+        
         # Retry configuration
         self.retry_config = RetryConfig(
             max_attempts=3,
@@ -57,23 +63,21 @@ class SiteAnalyzer:
                           url: str, 
                           config: Optional[CrawlConfig] = None,
                           metadata: Optional[AnalysisMetadata] = None) -> Site:
-        """Perform complete site analysis."""
-        start_time = time.time()
-        
-        try:
-            # Initialize site
-            site = self._initialize_site(url, config, metadata)
+        """Perform complete site analysis with performance optimization."""
+        async with performance_context(enable_monitoring=True) as ctx:
+            start_time = time.time()
             
-            self.error_handler.logger.info(f"Starting analysis of {url}")
-            
-            # Phase 1: Crawling
-            site = await self._crawl_site(site)
-            
-            # Phase 2: Content Analysis
-            site = await self._analyze_content(site)
-            
-            # Phase 3: Design Analysis
-            site = await self._analyze_design(site)
+            try:
+                # Initialize site
+                site = self._initialize_site(url, config, metadata)
+                
+                self.error_handler.logger.info(f"Starting analysis of {url}")
+                
+                # Phase 1: Crawling
+                site = await self._crawl_site(site)
+                
+                # Phase 2: Parallel Content and Design Analysis
+                site = await self._analyze_content_and_design_parallel(site)
             
             # Phase 4: Pattern Recognition
             site = await self._recognize_patterns(site)
@@ -392,6 +396,78 @@ class SiteAnalyzer:
             )
         
         return recommendations
+    
+    async def _analyze_content_and_design_parallel(self, site: Site) -> Site:
+        """Analyze content and design in parallel for better performance."""
+        self.error_handler.logger.info("Phase 2-3: Parallel content and design analysis")
+        
+        # Process pages in batches for content and design analysis
+        pages_to_analyze = list(site.crawled_pages)
+        
+        async def analyze_page_content_and_design(page: Page) -> Page:
+            """Analyze both content and design for a single page."""
+            try:
+                # Content analysis
+                page = await self.safe_executor.safe_execute(
+                    self.content_extractor.extract_content,
+                    page,
+                    error_context={"phase": "content_analysis", "url": str(page.url)},
+                    default_return=page
+                )
+                
+                # Design analysis
+                page = await self.safe_executor.safe_execute(
+                    self.design_extractor.extract_design,
+                    page,
+                    error_context={"phase": "design_analysis", "url": str(page.url)},
+                    default_return=page
+                )
+                
+                # Structure analysis
+                page = await self.safe_executor.safe_execute(
+                    self.structure_extractor.extract_structure,
+                    page,
+                    error_context={"phase": "structure_analysis", "url": str(page.url)},
+                    default_return=page
+                )
+                
+                return page
+                
+            except Exception as e:
+                page.add_warning(f"Analysis failed: {e}")
+                self.error_handler.handle_error(
+                    e, {"phase": "parallel_analysis", "url": str(page.url)}
+                )
+                return page
+        
+        # Process pages concurrently
+        processed_pages = await self.processor.process_batch(
+            pages_to_analyze,
+            analyze_page_content_and_design,
+            batch_size=3,  # Smaller batches for memory efficiency
+            progress_callback=lambda completed, total: self.error_handler.logger.info(
+                f"Analysis progress: {completed}/{total} pages completed"
+            )
+        )
+        
+        # Update site with processed pages
+        for page in processed_pages:
+            if page:  # Check for None results from failed processing
+                site.pages[str(page.url)] = page
+        
+        # Global design system analysis
+        site = await self.safe_executor.safe_execute(
+            self.design_extractor.analyze_global_design_system,
+            site,
+            error_context={"phase": "global_design_analysis"},
+            default_return=site
+        )
+        
+        self.error_handler.logger.info(
+            f"Parallel analysis completed: {len(processed_pages)} pages analyzed"
+        )
+        
+        return site
 
 
 async def analyze_website(url: str, 

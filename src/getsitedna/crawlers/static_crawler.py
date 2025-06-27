@@ -14,6 +14,8 @@ from ..models.page import Page
 from ..models.schemas import CrawlStatus, AssetInfo
 from ..utils.http import HTTPSession, RobotsChecker
 from ..utils.validation import is_valid_url, is_same_domain, resolve_url, normalize_url
+from ..utils.cache import cached, file_cache
+from ..utils.performance import ConcurrentProcessor, performance_context
 
 
 class StaticCrawler:
@@ -30,24 +32,31 @@ class StaticCrawler:
         self.discovered_urls: Set[str] = set()
         self.crawled_urls: Set[str] = set()
         
+        # Performance optimization
+        self.processor = ConcurrentProcessor(
+            max_workers=min(site.config.max_concurrent_requests, 10),
+            use_process_pool=False
+        )
+        
     async def crawl_site(self) -> Site:
         """Crawl the entire site starting from base URL."""
-        try:
-            # Load robots.txt if respecting it
-            if self.site.config.respect_robots_txt:
-                robots_loaded = self.robots_checker.load_robots_txt()
-                if robots_loaded:
-                    # Update rate limit based on robots.txt
-                    crawl_delay = self.robots_checker.get_crawl_delay()
-                    if crawl_delay and crawl_delay > self.site.config.rate_limit_delay:
-                        self.site.config.rate_limit_delay = crawl_delay
-                        self.session.rate_limiter.delay = crawl_delay
-            
-            # Discover initial URLs
-            await self._discover_initial_urls()
-            
-            # Crawl pages level by level
-            await self._crawl_by_depth()
+        async with performance_context(enable_monitoring=True) as ctx:
+            try:
+                # Load robots.txt if respecting it
+                if self.site.config.respect_robots_txt:
+                    robots_loaded = self.robots_checker.load_robots_txt()
+                    if robots_loaded:
+                        # Update rate limit based on robots.txt
+                        crawl_delay = self.robots_checker.get_crawl_delay()
+                        if crawl_delay and crawl_delay > self.site.config.rate_limit_delay:
+                            self.site.config.rate_limit_delay = crawl_delay
+                            self.session.rate_limiter.delay = crawl_delay
+                
+                # Discover initial URLs
+                await self._discover_initial_urls()
+                
+                # Crawl pages level by level with performance optimization
+                await self._crawl_by_depth_optimized()
             
             return self.site
             
@@ -323,3 +332,51 @@ class StaticCrawler:
                 type="javascript",
             )
             page.add_asset(asset)
+    
+    async def _crawl_by_depth_optimized(self):
+        """Optimized crawling with concurrent processing."""
+        current_depth = 0
+        
+        while current_depth <= self.site.config.max_depth:
+            # Get URLs for current depth
+            urls_to_crawl = [
+                url for url in self.discovered_urls 
+                if url not in self.crawled_urls 
+                and self.site.has_page(url)
+                and self.site.get_page(url).depth == current_depth
+            ]
+            
+            if not urls_to_crawl:
+                break
+            
+            # Process pages concurrently
+            pages_to_process = [self.site.get_page(url) for url in urls_to_crawl]
+            
+            await self.processor.process_batch(
+                pages_to_process,
+                self._crawl_page,
+                batch_size=5,  # Process in smaller batches to manage memory
+                progress_callback=self._update_crawl_progress
+            )
+            
+            current_depth += 1
+    
+    def _update_crawl_progress(self, completed: int, total: int):
+        """Update crawl progress for monitoring."""
+        progress = (completed / total) * 100 if total > 0 else 0
+        self.site.statistics.crawl_progress = progress
+    
+    @cached(ttl=3600, key_func=lambda self, url: f"page_content:{url}")
+    async def _get_cached_page_content(self, url: str) -> Optional[Dict]:
+        """Get page content with caching."""
+        try:
+            response = await self.session.get(url)
+            if response.status_code == 200:
+                return {
+                    "content": response.text,
+                    "headers": dict(response.headers),
+                    "status_code": response.status_code
+                }
+        except Exception:
+            pass
+        return None

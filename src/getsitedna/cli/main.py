@@ -128,5 +128,14 @@ def config_init(output: Path):
     console.print("[bold green]✓[/bold green] Configuration file created!")
 
 
+# Import and register performance commands
+from .commands.performance import performance
+cli.add_command(performance)
+
+# Import validation commands
+from .commands.validate import validate as validate_cmd
+cli.add_command(validate_cmd, name="validate-analysis")
+
+
 if __name__ == "__main__":
     cli()
