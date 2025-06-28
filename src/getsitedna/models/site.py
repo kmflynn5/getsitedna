@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Any
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 from .schemas import (
     AnalysisMetadata,
@@ -89,7 +89,8 @@ class Site(BaseModel):
     errors: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
     
-    @validator("base_url", pre=True)
+    @field_validator("base_url", mode="before")
+    @classmethod
     def validate_base_url(cls, v):
         """Ensure base URL is properly formatted."""
         if isinstance(v, str):

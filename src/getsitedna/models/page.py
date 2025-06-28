@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 from urllib.parse import urljoin, urlparse
 
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 from .schemas import (
     CrawlStatus,
@@ -75,7 +75,8 @@ class Page(BaseModel):
     errors: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
     
-    @validator("url", "redirect_url", "parent_url", pre=True)
+    @field_validator("url", "redirect_url", "parent_url", mode="before")
+    @classmethod
     def validate_urls(cls, v):
         """Ensure URLs are properly formatted."""
         if v is None:
