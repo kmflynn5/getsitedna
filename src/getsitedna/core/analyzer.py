@@ -78,46 +78,46 @@ class SiteAnalyzer:
                 
                 # Phase 2: Parallel Content and Design Analysis
                 site = await self._analyze_content_and_design_parallel(site)
-            
-            # Phase 4: Pattern Recognition
-            site = await self._recognize_patterns(site)
-            
-            # Phase 5: Asset Processing
-            if self.download_assets:
-                site = await self._process_assets(site)
-            
-            # Phase 6: API Discovery
-            site = await self._discover_apis(site)
-            
-            # Phase 7: Generate Outputs
-            await self._generate_outputs(site)
-            
-            # Finalize analysis
-            site.mark_analysis_complete()
-            
-            analysis_time = time.time() - start_time
-            self.error_handler.logger.info(
-                f"Analysis completed in {analysis_time:.2f}s. "
-                f"Pages: {site.stats.total_pages_analyzed}, "
-                f"Errors: {self.error_handler.error_stats['total_errors']}"
-            )
-            
-            return site
-            
-        except Exception as e:
-            analysis_error = self.error_handler.handle_error(
-                e, {"url": url, "phase": "unknown"}
-            )
-            
-            if analysis_error.severity == ErrorSeverity.CRITICAL:
-                raise analysis_error
-            
-            # Return partial results if possible
-            if 'site' in locals():
-                site.add_error(f"Analysis incomplete due to error: {analysis_error.message}")
+                
+                # Phase 4: Pattern Recognition
+                site = await self._recognize_patterns(site)
+                
+                # Phase 5: Asset Processing
+                if self.download_assets:
+                    site = await self._process_assets(site)
+                
+                # Phase 6: API Discovery
+                site = await self._discover_apis(site)
+                
+                # Phase 7: Generate Outputs
+                await self._generate_outputs(site)
+                
+                # Finalize analysis
+                site.mark_analysis_complete()
+                
+                analysis_time = time.time() - start_time
+                self.error_handler.logger.info(
+                    f"Analysis completed in {analysis_time:.2f}s. "
+                    f"Pages: {site.stats.total_pages_analyzed}, "
+                    f"Errors: {self.error_handler.error_stats['total_errors']}"
+                )
+                
                 return site
-            else:
-                raise analysis_error
+                
+            except Exception as e:
+                analysis_error = self.error_handler.handle_error(
+                    e, {"url": url, "phase": "unknown"}
+                )
+                
+                if analysis_error.severity == ErrorSeverity.CRITICAL:
+                    raise analysis_error
+                
+                # Return partial results if possible
+                if 'site' in locals():
+                    site.add_error(f"Analysis incomplete due to error: {analysis_error.message}")
+                    return site
+                else:
+                    raise analysis_error
     
     def _initialize_site(self, 
                         url: str, 

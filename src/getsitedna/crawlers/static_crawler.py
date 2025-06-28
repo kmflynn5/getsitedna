@@ -57,11 +57,11 @@ class StaticCrawler:
                 
                 # Crawl pages level by level with performance optimization
                 await self._crawl_by_depth_optimized()
-            
-            return self.site
-            
-        finally:
-            self.session.close()
+                
+                return self.site
+                
+            finally:
+                self.session.close()
     
     async def _discover_initial_urls(self):
         """Discover initial URLs from sitemaps and base URL."""

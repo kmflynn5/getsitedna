@@ -207,6 +207,15 @@ class PageTechnical(BaseModel):
     performance_metrics: Dict[str, Any] = Field(default_factory=dict)
 
 
+class CrawlConfig(BaseModel):
+    """Configuration for website crawling."""
+    max_depth: int = Field(default=3, description="Maximum crawling depth")
+    max_pages: int = Field(default=50, description="Maximum pages to crawl")
+    follow_external_links: bool = Field(default=False, description="Follow external links")
+    respect_robots_txt: bool = Field(default=True, description="Respect robots.txt")
+    delay_between_requests: float = Field(default=1.0, description="Delay between requests in seconds")
+
+
 class ValidationReport(BaseModel):
     """Analysis validation and quality metrics."""
     completeness_score: float = Field(ge=0.0, le=1.0)

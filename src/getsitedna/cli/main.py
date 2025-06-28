@@ -70,18 +70,40 @@ def analyze(
     if interactive:
         console.print("[yellow]Interactive mode enabled - you'll be prompted for preferences[/yellow]")
     
-    # TODO: Implement actual analysis logic
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console,
-    ) as progress:
-        task = progress.add_task("Initializing analysis...", total=None)
-        
-        # Placeholder implementation
-        import time
-        time.sleep(2)
-        progress.update(task, description="Analysis complete!")
+    # Run the actual analysis
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Initializing analysis...", total=None)
+            
+            # Import and run the analyzer
+            from ..core.analyzer import analyze_website
+            from ..models.schemas import CrawlConfig
+            
+            # Build configuration
+            config = {
+                "crawl_config": {
+                    "max_depth": depth,
+                    "max_pages": max_pages,
+                },
+                "use_dynamic_crawler": True,
+                "generate_markdown": True,
+                "download_assets": include_assets
+            }
+            
+            progress.update(task, description="Running analysis...")
+            
+            # Run the analysis
+            import asyncio
+            site = asyncio.run(analyze_website(url, config, output))
+            
+            progress.update(task, description="Analysis complete!")
+    except Exception as e:
+        console.print(f"[bold red]✗[/bold red] Analysis failed: {str(e)}")
+        raise click.Abort()
     
     console.print("[bold green]✓[/bold green] Analysis completed successfully!")
     console.print(f"[dim]Results saved to:[/dim] {output}")
