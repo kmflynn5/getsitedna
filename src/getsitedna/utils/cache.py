@@ -11,7 +11,7 @@ import aiofiles
 import asyncio
 from functools import wraps
 
-from .error_handling import ErrorHandler, safe_execute
+from .error_handling import ErrorHandler, SafeExecutor
 
 
 class CacheManager:

@@ -11,7 +11,7 @@ from functools import wraps
 import threading
 from contextlib import asynccontextmanager
 
-from .error_handling import ErrorHandler, safe_execute
+from .error_handling import ErrorHandler, SafeExecutor
 
 
 @dataclass
@@ -106,8 +106,8 @@ class ConcurrentProcessor:
             use_process_pool: Use ProcessPoolExecutor instead of ThreadPoolExecutor
             enable_monitoring: Enable performance monitoring
         """
-        self.max_workers = max_workers or self._get_optimal_workers()
         self.use_process_pool = use_process_pool
+        self.max_workers = max_workers or self._get_optimal_workers()
         self.enable_monitoring = enable_monitoring
         self.error_handler = ErrorHandler("ConcurrentProcessor")
         self.monitor = PerformanceMonitor() if enable_monitoring else None
