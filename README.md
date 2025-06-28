@@ -43,6 +43,16 @@ getsitedna analyze https://example.com --interactive
 
 # Use specific browser engine
 getsitedna analyze https://example.com --browser firefox
+
+# Create and use a configuration file
+getsitedna config init --output my-config.json
+getsitedna analyze https://example.com --config my-config.json
+
+# Validate analysis results
+getsitedna validate ./analysis --detailed
+
+# Generate summary reports
+getsitedna summary ./analysis --format json --output summary.json
 ```
 
 ### Performance Management
@@ -95,12 +105,37 @@ getsitedna performance [COMMAND]
 - `reset`: Reset to default settings
 - `benchmark`: Run performance benchmark
 
-#### validate-analysis
+#### validate
 Validate analysis output structure and completeness.
 
 ```bash
-getsitedna validate-analysis [ANALYSIS_DIR]
+getsitedna validate [ANALYSIS_DIR] [OPTIONS]
 ```
+
+**Options:**
+- `--detailed, -d`: Show detailed validation results
+- `--output, -o`: Save validation report to file
+
+#### summary
+Generate human-readable summary of analysis results.
+
+```bash
+getsitedna summary [ANALYSIS_DIR] [OPTIONS]
+```
+
+**Options:**
+- `--format, -f`: Output format (console/json/markdown)
+- `--output, -o`: Save summary to file
+
+#### config
+Configuration management commands.
+
+```bash
+getsitedna config [COMMAND]
+```
+
+**Commands:**
+- `init`: Create a default configuration file with `--output` and `--overwrite` options
 
 ### Configuration
 
