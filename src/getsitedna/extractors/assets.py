@@ -64,6 +64,8 @@ class AssetExtractor:
                 local_path = await self._download_asset(asset, session)
                 if local_path:
                     asset.local_path = local_path
+                    # Increment download counter
+                    self.site.stats.total_assets_downloaded += 1
                     
                     # Analyze downloaded asset
                     await self._analyze_downloaded_asset(asset)
