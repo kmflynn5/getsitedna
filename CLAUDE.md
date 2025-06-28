@@ -15,6 +15,11 @@ GetSiteDNA is a comprehensive website analysis tool that crawls websites and gen
 - All analysis features working correctly
 - Only remaining task: Package for PyPI distribution
 
+## Development Notes
+
+### Development Workflow Tips
+- Use venv to test commands during development 
+
 ## Architecture Overview
 
 ### Core Components

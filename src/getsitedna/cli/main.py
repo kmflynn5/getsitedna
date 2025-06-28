@@ -110,40 +110,6 @@ def analyze(
     console.print(f"[dim]Results saved to:[/dim] {output}")
 
 
-@cli.command()
-@click.argument("analysis_dir", type=click.Path(exists=True, path_type=Path))
-@click.option("--detailed", "-d", is_flag=True, help="Show detailed validation results")
-@click.option("--output", "-o", type=click.Path(path_type=Path), help="Save validation report to file")
-def validate(analysis_dir: Path, detailed: bool, output: Optional[Path]):
-    """Validate analysis output structure and completeness."""
-    from .commands.validate import AnalysisValidator
-    
-    validator = AnalysisValidator()
-    
-    try:
-        results = validator.validate_analysis_directory(analysis_dir)
-        
-        # Display results
-        validator.display_validation_results(results)
-        
-        # Save detailed report if requested
-        if output:
-            with open(output, 'w', encoding='utf-8') as f:
-                json.dump(results, f, indent=2, default=str)
-            console.print(f"\n[green]Detailed validation report saved to: {output}[/green]")
-        
-        # Exit with appropriate code
-        if results.get("overall_score", 0.0) < 0.6:
-            console.print("\n[red]Validation failed - analysis quality below threshold[/red]")
-            raise click.ClickException("Validation failed")
-        else:
-            console.print("\n[green]✓ Validation passed[/green]")
-    
-    except Exception as e:
-        if not isinstance(e, click.ClickException):
-            console.print(f"[red]Validation failed with error: {e}[/red]")
-            raise click.ClickException(f"Validation error: {e}")
-        raise
 
 
 @cli.command()
@@ -374,7 +340,7 @@ cli.add_command(performance)
 
 # Import validation commands
 from .commands.validate import validate as validate_cmd
-cli.add_command(validate_cmd, name="validate-analysis")
+cli.add_command(validate_cmd, name="validate")
 
 
 if __name__ == "__main__":
