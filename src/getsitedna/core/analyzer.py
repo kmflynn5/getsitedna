@@ -431,6 +431,9 @@ class SiteAnalyzer:
                     default_return=page
                 )
                 
+                # Mark page as analyzed (THIS WAS MISSING!)
+                page.mark_analyzed()
+                
                 return page
                 
             except Exception as e:
