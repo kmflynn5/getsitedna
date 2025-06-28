@@ -98,7 +98,7 @@ class AnalysisValidator:
             # Calculate overall scores
             progress.update(task, description="Calculating scores...")
             self._calculate_validation_scores(validation_results)
-            progress.complete_task(task)
+            progress.remove_task(task)
         
         return validation_results
     
