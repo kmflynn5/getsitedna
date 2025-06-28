@@ -134,6 +134,9 @@ class PatternRecognizer:
         layout_analysis = self._analyze_layout_patterns(pattern_occurrences, component_combinations)
         site.design_intent.visual_hierarchy = layout_analysis
         
+        # Analyze design intent from patterns and content
+        self._analyze_design_intent(site, pattern_occurrences)
+        
         return site
     
     def _analyze_page_patterns(self, page: Page) -> Dict[str, Dict[str, Any]]:
@@ -403,6 +406,114 @@ class PatternRecognizer:
             layout_analysis['content_organization'] = 'linear'
         
         return layout_analysis
+
+    def _analyze_design_intent(self, site: Site, pattern_occurrences: Dict[str, int]) -> None:
+        """Analyze design intent based on content, components, and visual design."""
+        
+        # Analyze brand personality from colors and components
+        brand_personality = []
+        
+        # Determine personality from color scheme
+        if site.global_color_palette:
+            dark_colors = sum(1 for color in site.global_color_palette[:5] 
+                            if sum(color.rgb) < 300)  # Dark colors
+            bright_colors = sum(1 for color in site.global_color_palette[:5]
+                              if any(c > 200 for c in [color.rgb[0], color.rgb[1], color.rgb[2]]))  # Bright colors
+            
+            if dark_colors >= 3:
+                brand_personality.extend(["professional", "sophisticated"])
+            if bright_colors >= 2:
+                brand_personality.extend(["vibrant", "energetic"])
+            
+            # Check for specific color associations
+            for color in site.global_color_palette[:3]:
+                r, g, b = color.rgb[0], color.rgb[1], color.rgb[2]
+                if b > 200 and r < 100:  # Blue dominant
+                    brand_personality.append("trustworthy")
+                elif g > 200 and r < 150:  # Green dominant
+                    brand_personality.append("growth-oriented")
+                elif r > 200 and g < 150:  # Red dominant
+                    brand_personality.append("bold")
+        
+        # Analyze component types across all pages for design intent
+        all_components = []
+        button_count = 0
+        form_count = 0
+        nav_count = 0
+        
+        for page in site.pages.values():
+            if page.structure and page.structure.components:
+                all_components.extend(page.structure.components)
+                
+                for comp in page.structure.components:
+                    comp_type = comp.component_type.value if hasattr(comp.component_type, 'value') else str(comp.component_type)
+                    if 'button' in comp_type.lower():
+                        button_count += 1
+                    elif 'form' in comp_type.lower():
+                        form_count += 1
+                    elif 'nav' in comp_type.lower() or 'header' in comp_type.lower():
+                        nav_count += 1
+        
+        # Infer personality from component patterns
+        if button_count >= 3:
+            brand_personality.append("action-oriented")
+        if form_count > 0:
+            brand_personality.append("interactive")
+        if len(all_components) >= 5:
+            brand_personality.append("feature-rich")
+        
+        # Also check for patterns (if any were detected)
+        if pattern_occurrences.get('testimonial', 0) > 0 or pattern_occurrences.get('social_proof', 0) > 0:
+            brand_personality.append("credible")
+        
+        # Remove duplicates and limit to top traits
+        site.design_intent.brand_personality = list(set(brand_personality))[:4]
+        
+        # Analyze UX goals from components and structure
+        ux_goals = []
+        
+        # Basic goals based on component presence
+        if nav_count > 0:
+            ux_goals.append("Clear site navigation")
+        
+        if button_count >= 2:
+            ux_goals.append("Drive user engagement")
+        
+        if form_count > 0:
+            ux_goals.append("Facilitate user interaction")
+        
+        if len(all_components) >= 3:
+            ux_goals.append("Rich user experience")
+        
+        # Add pattern-based goals if patterns exist
+        if pattern_occurrences.get('search_functionality', 0) > 0:
+            ux_goals.append("Easy content discovery")
+        
+        if pattern_occurrences.get('call_to_action', 0) >= 2:
+            ux_goals.append("Drive user conversions")
+        
+        if pattern_occurrences.get('testimonial', 0) > 0:
+            ux_goals.append("Build user trust")
+        
+        # Determine conversion focus based on components and patterns
+        if form_count > 0 or button_count >= 3:
+            site.design_intent.conversion_focus = "User engagement"
+        elif button_count >= 1:
+            site.design_intent.conversion_focus = "Basic interaction"
+        else:
+            site.design_intent.conversion_focus = "Information delivery"
+        
+        # Pattern-based conversion focus (override if patterns found)
+        cta_count = pattern_occurrences.get('call_to_action', 0)
+        pricing_table = pattern_occurrences.get('pricing_table', 0)
+        contact_form = pattern_occurrences.get('contact_form', 0)
+        
+        if pricing_table > 0 or cta_count >= 3:
+            site.design_intent.conversion_focus = "Sales conversion"
+        elif contact_form > 0 or cta_count >= 2:
+            site.design_intent.conversion_focus = "Lead generation"
+        
+        site.design_intent.user_experience_goals = ux_goals[:5]  # Limit to top 5 goals
 
 
 def recognize_site_patterns(site: Site) -> Site:
