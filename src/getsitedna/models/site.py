@@ -205,7 +205,7 @@ class Site(BaseModel):
         self.stats.total_pages_crawled = len(self.crawled_pages)
         self.stats.total_pages_analyzed = len([p for p in self.pages.values() if p.analyzed_at])
         self.stats.total_assets_found = sum(len(p.assets) for p in self.pages.values())
-        self.stats.total_components_identified = len(self.component_specifications)
+        self.stats.total_components_identified = sum(len(p.structure.components) for p in self.pages.values() if p.analyzed_at)
         self.stats.total_patterns_identified = len(self.experience_patterns)
         
         # Calculate duration

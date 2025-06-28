@@ -92,6 +92,9 @@ class SiteAnalyzer:
                 # Finalize analysis (update statistics before output generation)
                 site.mark_analysis_complete()
                 
+                # Calculate validation scores
+                self._calculate_validation_scores(site)
+                
                 # Phase 7: Generate Outputs
                 await self._generate_outputs(site)
                 
@@ -471,6 +474,66 @@ class SiteAnalyzer:
         )
         
         return site
+
+    def _calculate_validation_scores(self, site: Site) -> None:
+        """Calculate validation scores for the site and pages."""
+        # Calculate page validation scores
+        for page in site.pages.values():
+            if page.is_successful and page.analyzed_at:
+                page.validation.completeness_score = self._calculate_page_completeness(page)
+                page.validation.quality_metrics = self._calculate_page_quality_metrics(page)
+        
+        # Calculate site validation score
+        if site.pages:
+            page_scores = [p.validation.completeness_score for p in site.pages.values() 
+                          if p.is_successful and p.analyzed_at]
+            site.validation.completeness_score = sum(page_scores) / len(page_scores) if page_scores else 0.0
+            site.validation.quality_metrics = self._calculate_site_quality_metrics(site)
+    
+    def _calculate_page_completeness(self, page: Page) -> float:
+        """Calculate completeness score for a single page."""
+        score = 0.0
+        
+        # Content analysis (25%)
+        if page.content.text_content:
+            score += 0.25
+        
+        # Structure analysis (25%)
+        if page.structure.components:
+            score += 0.25
+        
+        # Design analysis (25%)
+        if page.design.color_palette or page.design.typography:
+            score += 0.25
+        
+        # SEO completeness (25%)
+        if page.seo.title and page.seo.description:
+            score += 0.25
+        
+        return score
+    
+    def _calculate_page_quality_metrics(self, page: Page) -> Dict[str, float]:
+        """Calculate quality metrics for a page."""
+        return {
+            "content_length": min(len(page.content.unique_copy or "") / 1000, 1.0),
+            "component_count": min(len(page.structure.components) / 10, 1.0),
+            "color_variety": min(len(page.design.color_palette) / 5, 1.0),
+            "font_variety": min(len(page.design.typography) / 3, 1.0),
+            "seo_completeness": 1.0 if (page.seo.title and page.seo.description) else 0.5 if page.seo.title else 0.0,
+        }
+    
+    def _calculate_site_quality_metrics(self, site: Site) -> Dict[str, float]:
+        """Calculate quality metrics for the entire site."""
+        total_components = sum(len(p.structure.components) for p in site.pages.values() if p.is_successful)
+        total_colors = len(site.global_color_palette)
+        total_fonts = len(site.global_typography)
+        
+        return {
+            "total_components": min(total_components / 20, 1.0),
+            "global_design_consistency": min((total_colors + total_fonts) / 10, 1.0),
+            "crawl_success_rate": site.stats.total_pages_crawled / max(site.stats.total_pages_discovered, 1),
+            "analysis_success_rate": site.stats.total_pages_analyzed / max(site.stats.total_pages_crawled, 1),
+        }
 
 
 async def analyze_website(url: str, 
