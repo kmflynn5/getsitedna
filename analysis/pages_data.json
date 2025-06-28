@@ -1,0 +1,55 @@
+{
+  "total_pages": 1,
+  "successful_pages": 1,
+  "failed_pages": 0,
+  "pages": {
+    "https://example.com/": {
+      "summary": {
+        "url": "https://example.com/",
+        "title": "Example Domain",
+        "status": "completed",
+        "status_code": 200,
+        "depth": 0,
+        "content_length": 1248,
+        "components_count": 0,
+        "assets_count": 0,
+        "internal_links_count": 0,
+        "external_links_count": 1,
+        "errors_count": 0,
+        "warnings_count": 1,
+        "validation_score": 0.0
+      },
+      "basic_info": {
+        "title": "Example Domain",
+        "status": "completed",
+        "status_code": 200,
+        "depth": 0,
+        "content_type": "text/html",
+        "content_length": 1248,
+        "discovered_at": "2025-06-27T21:35:25.362069",
+        "crawled_at": "2025-06-27T21:35:26.402787",
+        "analyzed_at": null
+      },
+      "seo": {
+        "title": null,
+        "description": null,
+        "keywords": [],
+        "og_title": null,
+        "og_description": null,
+        "og_image": null,
+        "canonical_url": null,
+        "schema_markup": {}
+      },
+      "links": {
+        "internal_count": 0,
+        "external_count": 1,
+        "children_count": 0
+      },
+      "assets_count": 0,
+      "errors": [],
+      "warnings": [
+        "No assets found on page"
+      ]
+    }
+  }
+}

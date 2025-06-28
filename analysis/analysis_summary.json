@@ -1,0 +1,31 @@
+{
+  "base_url": "https://example.com/",
+  "domain": "example.com",
+  "analysis_date": "2025-06-27T21:35:24.377367",
+  "analysis_philosophy": "modern_interpretation",
+  "target_framework": "react_nextjs",
+  "stats": {
+    "total_pages_discovered": 1,
+    "total_pages_crawled": 0,
+    "total_pages_analyzed": 0,
+    "total_assets_found": 0,
+    "total_assets_downloaded": 0,
+    "total_components_identified": 0,
+    "total_patterns_identified": 0,
+    "crawl_duration_seconds": null,
+    "analysis_duration_seconds": null
+  },
+  "design_intent": {
+    "brand_personality": [],
+    "ux_goals": [],
+    "conversion_focus": null
+  },
+  "patterns_count": 0,
+  "components_count": 0,
+  "global_colors_count": 0,
+  "global_fonts_count": 0,
+  "validation_score": 0.0,
+  "errors_count": 0,
+  "warnings_count": 1,
+  "output_directory": "analysis"
+}

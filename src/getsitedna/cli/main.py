@@ -81,7 +81,7 @@ def analyze(
             
             # Import and run the analyzer
             from ..core.analyzer import analyze_website
-            from ..models.schemas import CrawlConfig
+            from ..models.site import CrawlConfig
             
             # Build configuration
             config = {

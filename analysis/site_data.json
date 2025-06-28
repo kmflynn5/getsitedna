@@ -1,0 +1,49 @@
+{
+  "base_url": "https://example.com/",
+  "domain": "example.com",
+  "analysis_metadata": {
+    "analysis_philosophy": "modern_interpretation",
+    "target_framework": "react_nextjs",
+    "design_era": "2025_modern_web",
+    "accessibility_level": "wcag_aa",
+    "performance_targets": [
+      "core_web_vitals_optimized"
+    ],
+    "analysis_date": "2025-06-27T21:35:24.377367",
+    "tool_version": "0.1.0",
+    "analysis_started_at": "2025-06-27T21:35:24.377374",
+    "analysis_completed_at": null
+  },
+  "crawl_config": {
+    "max_depth": 1,
+    "max_pages": 1,
+    "include_assets": true,
+    "respect_robots_txt": true,
+    "rate_limit_delay": 1.0,
+    "concurrent_requests": 5,
+    "browser_engine": "chromium",
+    "timeout": 30
+  },
+  "statistics": {
+    "total_pages_discovered": 1,
+    "total_pages_crawled": 0,
+    "total_pages_analyzed": 0,
+    "total_assets_found": 0,
+    "total_assets_downloaded": 0,
+    "total_components_identified": 0,
+    "total_patterns_identified": 0,
+    "crawl_duration_seconds": null,
+    "analysis_duration_seconds": null
+  },
+  "sitemap_urls": [],
+  "robots_txt_content": null,
+  "global_design_system": {
+    "color_palette": [],
+    "typography": [],
+    "design_tokens": []
+  },
+  "errors": [],
+  "warnings": [
+    "API discovery failed: 'TechnicalModernization' object has no attribute 'api_endpoints'"
+  ]
+}

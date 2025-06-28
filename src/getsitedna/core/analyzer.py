@@ -5,9 +5,9 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
-from ..models.site import Site
+from ..models.site import Site, CrawlConfig
 from ..models.page import Page
-from ..models.schemas import AnalysisMetadata, CrawlConfig
+from ..models.schemas import AnalysisMetadata
 from ..crawlers.static_crawler import StaticCrawler
 from ..crawlers.dynamic_crawler import DynamicCrawler
 from ..extractors.content import ContentExtractor

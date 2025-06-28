@@ -157,7 +157,7 @@ class TestSmokeTests:
     
     def test_crawl_config_creation(self):
         """Test that CrawlConfig can be created with defaults."""
-        from src.getsitedna.models.schemas import CrawlConfig
+        from src.getsitedna.models.site import CrawlConfig
         
         # Should not raise any validation errors
         config = CrawlConfig()
@@ -212,6 +212,7 @@ class TestCriticalPaths:
         assert hasattr(report, 'completeness_score')
         
         # CrawlConfig should have core crawling parameters
+        from src.getsitedna.models.site import CrawlConfig
         config = CrawlConfig()
         assert hasattr(config, 'max_depth')
         assert hasattr(config, 'max_pages')

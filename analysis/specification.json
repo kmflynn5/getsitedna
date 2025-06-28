@@ -1,0 +1,57 @@
+{
+  "metadata": {
+    "analysis_philosophy": "modern_interpretation",
+    "target_framework": "react_nextjs",
+    "design_era": "2025_modern_web",
+    "accessibility_level": "wcag_aa",
+    "performance_targets": [
+      "core_web_vitals_optimized"
+    ],
+    "analysis_date": "2025-06-27T21:35:24.377367",
+    "tool_version": "0.1.0",
+    "base_url": "https://example.com/",
+    "domain": "example.com"
+  },
+  "design_intent": {
+    "brand_personality": [],
+    "user_experience_goals": [],
+    "visual_hierarchy": {
+      "primary_layout": "standard_informational",
+      "navigation_complexity": "minimal",
+      "conversion_focus": "low",
+      "content_organization": "linear"
+    },
+    "conversion_focus": null
+  },
+  "experience_patterns": [],
+  "component_specifications": [],
+  "technical_modernization": {
+    "performance_strategy": {},
+    "accessibility_baseline": {},
+    "security_considerations": [],
+    "seo_optimizations": []
+  },
+  "design_system": {
+    "color_palette": [],
+    "typography": [],
+    "design_tokens": []
+  },
+  "validation": {
+    "completeness_score": 0.0,
+    "quality_metrics": {},
+    "missing_elements": [],
+    "recommendations": [],
+    "analysis_warnings": []
+  },
+  "statistics": {
+    "total_pages_discovered": 1,
+    "total_pages_crawled": 0,
+    "total_pages_analyzed": 0,
+    "total_assets_found": 0,
+    "total_assets_downloaded": 0,
+    "total_components_identified": 0,
+    "total_patterns_identified": 0,
+    "crawl_duration_seconds": null,
+    "analysis_duration_seconds": null
+  }
+}
