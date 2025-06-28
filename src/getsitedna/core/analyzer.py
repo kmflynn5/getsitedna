@@ -89,11 +89,11 @@ class SiteAnalyzer:
                 # Phase 6: API Discovery
                 site = await self._discover_apis(site)
                 
+                # Finalize analysis (update statistics before output generation)
+                site.mark_analysis_complete()
+                
                 # Phase 7: Generate Outputs
                 await self._generate_outputs(site)
-                
-                # Finalize analysis
-                site.mark_analysis_complete()
                 
                 analysis_time = time.time() - start_time
                 self.error_handler.logger.info(
