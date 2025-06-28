@@ -112,18 +112,33 @@ class AsyncHTTPSession:
         if self._session:
             await self._session.close()
     
-    async def get(self, url: str, **kwargs) -> aiohttp.ClientResponse:
+    def get(self, url: str, **kwargs):
         """Make an async GET request with rate limiting and concurrency control."""
-        async with self.semaphore:
-            await self.rate_limiter.wait()
+        return _AsyncRequestContext(self, url, **kwargs)
+
+
+class _AsyncRequestContext:
+    """Context manager for async HTTP requests with rate limiting."""
+    
+    def __init__(self, session: 'AsyncHTTPSession', url: str, **kwargs):
+        self.session = session
+        self.url = url
+        self.kwargs = kwargs
+        self.response = None
+    
+    async def __aenter__(self):
+        async with self.session.semaphore:
+            await self.session.rate_limiter.wait()
             
-            if not self._session:
+            if not self.session._session:
                 raise RuntimeError("Session not initialized. Use async with.")
             
-            async with self._session.get(url, **kwargs) as response:
-                # Read content to ensure connection is reused
-                await response.read()
-                return response
+            self.response = await self.session._session.get(self.url, **self.kwargs)
+            return await self.response.__aenter__()
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self.response:
+            return await self.response.__aexit__(exc_type, exc_val, exc_tb)
 
 
 class RobotsChecker:
