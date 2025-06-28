@@ -218,7 +218,7 @@ class CrawlConfig(BaseModel):
 
 class ValidationReport(BaseModel):
     """Analysis validation and quality metrics."""
-    completeness_score: float = Field(ge=0.0, le=1.0)
+    completeness_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Overall completeness score (0-1)")
     quality_metrics: Dict[str, float] = Field(default_factory=dict)
     missing_elements: List[str] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)

@@ -52,7 +52,7 @@ class Site(BaseModel):
     
     # Basic site information
     base_url: HttpUrl
-    domain: str = Field(init=False)
+    domain: str = Field(default="")
     
     # Analysis configuration
     config: CrawlConfig = Field(default_factory=CrawlConfig)
@@ -100,9 +100,14 @@ class Site(BaseModel):
         return v
     
     def __init__(self, **data):
+        # Set domain from base_url if not provided
+        if 'domain' not in data and 'base_url' in data:
+            base_url = data['base_url']
+            if isinstance(base_url, str):
+                if not base_url.startswith(("http://", "https://")):
+                    base_url = "https://" + base_url
+            data['domain'] = urlparse(str(base_url)).netloc
         super().__init__(**data)
-        # Set domain from base_url
-        self.domain = urlparse(str(self.base_url)).netloc
     
     @property
     def total_pages(self) -> int:
