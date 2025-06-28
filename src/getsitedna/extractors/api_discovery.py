@@ -69,12 +69,12 @@ class APIDiscovery:
             api_metadata.update(page_endpoints)
         
         # Additional discovery methods
-        additional_endpoints = self._discover_common_endpoints(site.base_url)
+        additional_endpoints = self._discover_common_endpoints(str(site.base_url))
         discovered_endpoints.update(additional_endpoints.keys())
         api_metadata.update(additional_endpoints)
         
         # Analyze discovered endpoints
-        analyzed_endpoints = self._analyze_endpoints(discovered_endpoints, api_metadata, site.base_url)
+        analyzed_endpoints = self._analyze_endpoints(discovered_endpoints, api_metadata, str(site.base_url))
         
         # Store results in site
         site.technical_modernization.api_endpoints = list(analyzed_endpoints.keys())

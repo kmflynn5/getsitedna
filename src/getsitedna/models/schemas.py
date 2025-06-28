@@ -153,6 +153,8 @@ class TechnicalModernization(BaseModel):
     accessibility_baseline: Dict[str, str] = Field(default_factory=dict)
     security_considerations: List[str] = Field(default_factory=list)
     seo_optimizations: List[str] = Field(default_factory=list)
+    api_endpoints: List[str] = Field(default_factory=list)
+    api_documentation: Dict[str, Any] = Field(default_factory=dict)
 
 
 class DesignIntent(BaseModel):

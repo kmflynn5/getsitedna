@@ -717,8 +717,15 @@ For each component:
         return "No API endpoints detected in the analysis."
     
     def _format_content_requirements(self, site: Site) -> str:
+        # Flatten and count unique content categories
+        all_categories = set()
+        for page in site.crawled_pages:
+            categories = page.content.content_structure.get('categories', [])
+            if categories and isinstance(categories, list):
+                all_categories.update(categories)
+        
         return f"""- **CMS Integration:** Consider headless CMS for content management
-- **Content Types:** {len(set(page.content.content_structure.get('categories', []) for page in site.crawled_pages if page.content.content_structure.get('categories')))} content categories identified
+- **Content Types:** {len(all_categories)} content categories identified
 - **Media Management:** Centralized asset management system
 - **SEO Management:** Built-in SEO optimization tools"""
     
