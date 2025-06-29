@@ -244,8 +244,12 @@ class DesignExtractor:
             import requests
             response = requests.get(css_url, timeout=10)
             if response.status_code == 200:
-                self._parse_css_fonts(response.text, fonts)
-        except Exception:
+                # The _parse_css_fonts method modifies the fonts dict in place
+                parsed_fonts = self._parse_css_fonts(response.text, fonts)
+                # Update fonts with the parsed results
+                fonts.update(parsed_fonts)
+        except Exception as e:
+            # Silently handle CSS fetching errors in production
             pass
     
     def _parse_css_fonts(self, css_content: str, fonts: Dict[str, Dict]) -> Dict[str, Dict]:
@@ -253,9 +257,71 @@ class DesignExtractor:
         if not fonts:
             fonts = {}
         
-        # Find font-family declarations
+        # Parse @font-face declarations (Google Fonts, custom fonts)
+        self._parse_font_face_declarations(css_content, fonts)
+        
+        # Parse regular font-family declarations in CSS rules
+        self._parse_font_family_declarations(css_content, fonts)
+        
+        return fonts
+    
+    def _parse_font_face_declarations(self, css_content: str, fonts: Dict[str, Dict]):
+        """Parse @font-face declarations for comprehensive font information."""
+        # Find @font-face blocks
+        font_face_pattern = r'@font-face\s*\{([^}]+)\}'
+        font_face_matches = re.findall(font_face_pattern, css_content, re.IGNORECASE | re.DOTALL)
+        
+        
+        for font_face_block in font_face_matches:
+            # Extract font-family from this block
+            family_match = re.search(r'font-family\s*:\s*[\'"]?([^\'";\}]+)[\'"]?', font_face_block, re.IGNORECASE)
+            if not family_match:
+                continue
+                
+            font_family = family_match.group(1).strip()
+            
+            # Initialize font entry if not exists
+            if font_family not in fonts:
+                fonts[font_family] = {'weights': [], 'sizes': [], 'contexts': ['css']}
+            
+            # Extract font-weight from this block
+            weight_match = re.search(r'font-weight\s*:\s*(\d+|bold|normal|lighter|bolder)', font_face_block, re.IGNORECASE)
+            if weight_match:
+                weight = weight_match.group(1).lower()
+                
+                # Convert named weights to numbers
+                weight_mapping = {
+                    'normal': 400,
+                    'bold': 700,
+                    'lighter': 300,
+                    'bolder': 800
+                }
+                
+                if weight in weight_mapping:
+                    weight_num = weight_mapping[weight]
+                elif weight.isdigit():
+                    weight_num = int(weight)
+                else:
+                    weight_num = 400  # Default
+                
+                if weight_num not in fonts[font_family]['weights']:
+                    fonts[font_family]['weights'].append(weight_num)
+            
+            # Extract font-size if present (rare in @font-face but possible)
+            size_match = re.search(r'font-size\s*:\s*([^;\}]+)', font_face_block, re.IGNORECASE)
+            if size_match:
+                size = size_match.group(1).strip()
+                if size not in fonts[font_family]['sizes']:
+                    fonts[font_family]['sizes'].append(size)
+    
+    def _parse_font_family_declarations(self, css_content: str, fonts: Dict[str, Dict]):
+        """Parse regular font-family declarations in CSS rules."""
+        # Find font-family declarations in CSS rules (not @font-face)
+        # Remove @font-face blocks first, then search for font-family
+        css_without_fontface = re.sub(r'@font-face\s*\{[^}]+\}', '', css_content, flags=re.IGNORECASE | re.DOTALL)
+        
         font_family_pattern = r'font-family\s*:\s*([^;]+)'
-        font_matches = re.findall(font_family_pattern, css_content, re.IGNORECASE)
+        font_matches = re.findall(font_family_pattern, css_without_fontface, re.IGNORECASE)
         
         for match in font_matches:
             # Clean up the font family string
@@ -266,41 +332,63 @@ class DesignExtractor:
                     if font_family not in fonts:
                         fonts[font_family] = {'weights': [], 'sizes': [], 'contexts': ['css']}
         
-        # Find font-weight declarations
-        weight_pattern = r'font-weight\s*:\s*(\d+|bold|normal|lighter|bolder)'
-        weight_matches = re.findall(weight_pattern, css_content, re.IGNORECASE)
+        # Find font-weight and font-size declarations and try to associate them with context
+        self._parse_contextual_font_properties(css_content, fonts)
+    
+    def _parse_contextual_font_properties(self, css_content: str, fonts: Dict[str, Dict]):
+        """Parse font weights and sizes and try to associate them contextually."""
+        # Look for CSS rules that contain both font-family and other properties
+        css_rule_pattern = r'([^{}]*)\{([^}]+)\}'
+        css_rules = re.findall(css_rule_pattern, css_content, re.IGNORECASE | re.DOTALL)
         
-        for match in weight_matches:
-            weight = match.lower()
-            # Convert named weights to numbers
-            if weight == 'normal':
-                weight = '400'
-            elif weight == 'bold':
-                weight = '700'
-            elif weight == 'lighter':
-                weight = '300'
-            elif weight == 'bolder':
-                weight = '800'
-            
-            # Add weight to the most recently found font (simplified approach)
-            if fonts:
-                last_font = list(fonts.keys())[-1]
-                if weight.isdigit() and int(weight) not in fonts[last_font]['weights']:
-                    fonts[last_font]['weights'].append(int(weight))
-        
-        # Find font-size declarations
-        size_pattern = r'font-size\s*:\s*([^;]+)'
-        size_matches = re.findall(size_pattern, css_content, re.IGNORECASE)
-        
-        for match in size_matches:
-            size = match.strip()
-            # Add size to the most recently found font (simplified approach)
-            if fonts and size not in ['inherit', 'initial', 'unset']:
-                last_font = list(fonts.keys())[-1]
-                if size not in fonts[last_font]['sizes']:
-                    fonts[last_font]['sizes'].append(size)
-        
-        return fonts
+        for selector, rule_body in css_rules:
+            # Skip @font-face rules (already handled)
+            if '@font-face' in selector:
+                continue
+                
+            # Check if this rule has a font-family declaration
+            family_match = re.search(r'font-family\s*:\s*([^;]+)', rule_body, re.IGNORECASE)
+            if family_match:
+                font_families = [f.strip().strip('"\'') for f in family_match.group(1).split(',')]
+                
+                # Look for font-weight in the same rule
+                weight_match = re.search(r'font-weight\s*:\s*(\d+|bold|normal|lighter|bolder)', rule_body, re.IGNORECASE)
+                if weight_match:
+                    weight = weight_match.group(1).lower()
+                    weight_mapping = {
+                        'normal': 400,
+                        'bold': 700,
+                        'lighter': 300,
+                        'bolder': 800
+                    }
+                    
+                    if weight in weight_mapping:
+                        weight_num = weight_mapping[weight]
+                    elif weight.isdigit():
+                        weight_num = int(weight)
+                    else:
+                        weight_num = 400
+                    
+                    # Add weight to the specific font families in this rule
+                    for font_family in font_families:
+                        if font_family and font_family.lower() not in ['inherit', 'initial', 'unset']:
+                            if font_family not in fonts:
+                                fonts[font_family] = {'weights': [], 'sizes': [], 'contexts': ['css']}
+                            if weight_num not in fonts[font_family]['weights']:
+                                fonts[font_family]['weights'].append(weight_num)
+                
+                # Look for font-size in the same rule
+                size_match = re.search(r'font-size\s*:\s*([^;]+)', rule_body, re.IGNORECASE)
+                if size_match:
+                    size = size_match.group(1).strip()
+                    if size not in ['inherit', 'initial', 'unset']:
+                        # Add size to the specific font families in this rule
+                        for font_family in font_families:
+                            if font_family and font_family.lower() not in ['inherit', 'initial', 'unset']:
+                                if font_family not in fonts:
+                                    fonts[font_family] = {'weights': [], 'sizes': [], 'contexts': ['css']}
+                                if size not in fonts[font_family]['sizes']:
+                                    fonts[font_family]['sizes'].append(size)
     
     def _extract_design_tokens(self, soup: BeautifulSoup, page: Page) -> List[DesignToken]:
         """Extract design tokens and CSS custom properties."""
