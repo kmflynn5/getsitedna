@@ -228,7 +228,7 @@ class Site(BaseModel):
                 "conversion_focus": self.design_intent.conversion_focus,
             },
             "patterns_count": len(self.experience_patterns),
-            "components_count": len(self.component_specifications),
+            "components_count": self.stats.total_components_identified,
             "global_colors_count": len(self.global_color_palette),
             "global_fonts_count": len(self.global_typography),
             "validation_score": self.validation.completeness_score,
