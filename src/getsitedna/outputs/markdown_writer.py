@@ -199,7 +199,7 @@ This document outlines all the UI components identified during the analysis of {
 
 ## Component Overview
 
-{len(site.component_specifications)} components were identified across {site.stats.total_pages_analyzed} pages.
+{site.stats.total_components_identified} components were identified across {site.stats.total_pages_analyzed} pages.
 
 """
         
@@ -210,6 +210,13 @@ This document outlines all the UI components identified during the analysis of {
             if comp_type not in components_by_type:
                 components_by_type[comp_type] = []
             components_by_type[comp_type].append(component)
+        
+        # If no component specifications but components were identified, add a note
+        if not site.component_specifications and site.stats.total_components_identified > 0:
+            content += f"""
+**Note:** {site.stats.total_components_identified} components were identified during page analysis. Detailed component specifications can be found in the individual page analysis files in the `pages/` directory.
+
+"""
         
         # Write each component type
         for comp_type, components in components_by_type.items():

@@ -94,7 +94,7 @@ class JSONWriter:
                 "browser_engine": site.config.browser_engine,
                 "timeout": site.config.timeout,
             },
-            "statistics": site.stats.dict(),
+            "stats": site.stats.dict(),
             "sitemap_urls": [str(url) for url in site.sitemap_urls],
             "robots_txt_content": site.robots_txt_content,
             "global_design_system": {
